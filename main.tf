@@ -17,7 +17,7 @@ resource "oci_core_vcn" "milleniun_vcn" {
   dns_label      = "internal"
   cidr_block     = "10.0.0.0/16"
   compartment_id = var.compartment_id
-  display_name   = "My internal VCN"
+  display_name   = "MilleniumVCN"
 }
 
 resource "oci_core_subnet" "dev" {
@@ -28,17 +28,16 @@ resource "oci_core_subnet" "dev" {
   prohibit_public_ip_on_vnic = false
   prohibit_internet_ingress  = false
   dns_label                  = "dev"
+  dhcp_options_id   = oci_core_vcn.milleniun_vcn.default_dhcp_options_id
   security_list_ids = [
-    oci_core_vcn.milleniun_vcn.default_security_list_id,
-    oci_core_security_list.millenium_security_list.id
+    oci_core_vcn.milleniun_vcn.default_security_list_id
   ]
-  route_table_id = oci_core_route_table.millenium_route_table.id
 }
 
 
-resource "oci_core_security_list" "millenium_security_list" {
+resource "oci_core_default_security_list" "millenium_security_list" {
   compartment_id = var.compartment_id
-  vcn_id = oci_core_vcn.milleniun_vcn.id
+  manage_default_resource_id = oci_core_vcn.milleniun_vcn.default_security_list_id
   display_name = "MilleniumSecurityList"
 
   egress_security_rules {
@@ -70,6 +69,47 @@ resource "oci_core_security_list" "millenium_security_list" {
     }
 
   }
+
+  ingress_security_rules {
+    description = "SSH"
+    protocol = "6" # TCP
+    source = "0.0.0.0/0"
+    source_type = "CIDR_BLOCK"
+    tcp_options {
+        min = 22
+        max = 22
+    }
+
+  }
+
+  ingress_security_rules {
+    description = "ICMP"
+    protocol = "1" # ICMP
+    source = "0.0.0.0/0"
+    source_type = "CIDR_BLOCK"
+    icmp_options {
+      type = 3
+    }
+  }
+  ingress_security_rules {
+    description = "ICMP"
+    protocol = "1" # ICMP
+    source = "0.0.0.0/0"
+    source_type = "CIDR_BLOCK"
+    icmp_options {
+      type = 4
+    }
+  }
+
+  ingress_security_rules {
+    description = "ICMP"
+    protocol = "1" # ICMP
+    source = "10.0.0.0/16"
+    source_type = "CIDR_BLOCK"
+    icmp_options {
+      type = 3
+    }
+  }
 }
 
 resource "oci_core_internet_gateway" "millenium_internet_gateway" {
@@ -80,9 +120,9 @@ resource "oci_core_internet_gateway" "millenium_internet_gateway" {
     enabled = true
 }
 
-resource "oci_core_route_table" "millenium_route_table" {
+resource "oci_core_default_route_table" "millenium_route_table" {
     compartment_id = var.compartment_id
-    vcn_id = oci_core_vcn.milleniun_vcn.id
+    manage_default_resource_id = oci_core_vcn.milleniun_vcn.default_route_table_id
 
     display_name = "MilleniumRouteTable"
     route_rules {
@@ -99,6 +139,10 @@ resource "oci_core_instance" "millenium_postgres" {
     availability_domain = var.availability_domain
     compartment_id = var.compartment_id
     shape = "VM.Standard.E2.1.Micro"
+    shape_config {
+      memory_in_gbs = 1
+      ocpus         = 1
+    }
     display_name = "MilleniumPostgresql"
     source_details {
         source_id = var.image_id
@@ -107,9 +151,10 @@ resource "oci_core_instance" "millenium_postgres" {
     create_vnic_details {
         assign_public_ip = true
         subnet_id = oci_core_subnet.dev.id
+        hostname_label = "postgres"
     }
     metadata = {
-        ssh_authorized_keys = file("./ssh.key.pub")
+        ssh_authorized_keys = file("/opt/apps/oci/postgresql/ssh.key.pub")
     } 
     preserve_boot_volume = false
 }
