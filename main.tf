@@ -139,7 +139,7 @@ resource "oci_core_default_route_table" "millenium_route_table" {
     }
 }
 
-resource "oci_core_instance" "millenium_postgres" {
+resource "oci_core_instance" "millenium_server" {
     availability_domain = var.availability_domain
     compartment_id = var.compartment_id
     shape = "VM.Standard.E2.1.Micro"
@@ -147,7 +147,7 @@ resource "oci_core_instance" "millenium_postgres" {
       memory_in_gbs = 1
       ocpus         = 1
     }
-    display_name = "MilleniumPostgresql"
+    display_name = "MilleniumServer"
     source_details {
         source_id = var.image_id
         source_type = "image"
@@ -158,7 +158,7 @@ resource "oci_core_instance" "millenium_postgres" {
         hostname_label = "postgres"
     }
     metadata = {
-        ssh_authorized_keys = file("/opt/apps/oci/postgresql/ssh.key.pub")
+        ssh_authorized_keys = file("./ssh.key.pub")
         user_data = base64encode(data.template_file.user_data.rendered)
     } 
     preserve_boot_volume = false

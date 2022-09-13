@@ -17,19 +17,17 @@ packages:
   - gcc
   - gcc-c++
   - make
+  - libpq
+  - postgresql-server-devel
+  - postgresql
+  - postgresql-server
 
 runcmd:
-  - [sudo, yum, install, postgresql-server*, -y]
-  - [sudo, firewall-cmd, --zone=public, --permanent, --add-port=80/tcp]
-  - [sudo, firewall-cmd, --zone=public, --permanent, --add-port=5432/tcp]
-  - [sudo, firewall-cmd, --reload]
-  - [systemctl, enable, postgresql.service]
+  - [wget, https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh, -P, /tmp]
+  - [sudo, su, opc, -c, "sh /tmp/goinstall.sh"]
   - [sudo, postgresql-setup, --initdb]
+  - [systemctl, enable, postgresql.service]
   - [sudo, systemctl, start, postgresql.service]
-  - [wget, https://go.dev/dl/go1.19.1.linux-amd64.tar.gz]
-  - [sudo, rm, -rf, /usr/local/go]
-  - [sudo, tar, -C, /usr/local, -xzf, go1.19.1.linux-amd64.tar.gz']
-  - [sudo, rm, -r, go1.19.1.linux-amd64.tar.gz]
-  - [echo, '"export PATH=\$PATH:/usr/local/go/bin" >> /home/opc/.bashrc']
-  - [source, /home/opc/.bashrc]
+  - [sudo, firewall-offline-cmd, --zone=public, --add-port=80/tcp]
+  - [sudo, firewall-offline-cmd, --zone=public, --add-port=5432/tcp]
   - [systemctl, restart, firewalld]
