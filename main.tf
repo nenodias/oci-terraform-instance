@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+data "template_file" "user_data" {
+  template = file("cloud-init.yaml")
+}
+
 provider "oci" {
   region              = var.region
   auth                = "SecurityToken"
@@ -155,6 +159,7 @@ resource "oci_core_instance" "millenium_postgres" {
     }
     metadata = {
         ssh_authorized_keys = file("/opt/apps/oci/postgresql/ssh.key.pub")
+        user_data = base64encode(data.template_file.user_data.rendered)
     } 
     preserve_boot_volume = false
 }

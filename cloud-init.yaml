@@ -1,0 +1,35 @@
+#cloud-config
+packages_update: true
+packages_upgrade: true
+
+yum_repos:
+    epel-testing:
+        baseurl: https://yum.oracle.com/repo/OracleLinux/OL7/developer_EPEL/$basearch/
+        enabled: true
+        failovermethod: priority
+        gpgcheck: true
+        gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+        name: EPEL ($basearch)
+
+packages:
+  - git
+  - lzop
+  - gcc
+  - gcc-c++
+  - make
+
+runcmd:
+  - [sudo, yum, install, postgresql-server*, -y]
+  - [sudo, firewall-cmd, --zone=public, --permanent, --add-port=80/tcp]
+  - [sudo, firewall-cmd, --zone=public, --permanent, --add-port=5432/tcp]
+  - [sudo, firewall-cmd, --reload]
+  - [systemctl, enable, postgresql.service]
+  - [sudo, postgresql-setup, --initdb]
+  - [sudo, systemctl, start, postgresql.service]
+  - [wget, https://go.dev/dl/go1.19.1.linux-amd64.tar.gz]
+  - [sudo, rm, -rf, /usr/local/go]
+  - [sudo, tar, -C, /usr/local, -xzf, go1.19.1.linux-amd64.tar.gz']
+  - [sudo, rm, -r, go1.19.1.linux-amd64.tar.gz]
+  - [echo, '"export PATH=\$PATH:/usr/local/go/bin" >> /home/opc/.bashrc']
+  - [source, /home/opc/.bashrc]
+  - [systemctl, restart, firewalld]
