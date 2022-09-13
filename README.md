@@ -27,7 +27,7 @@ ssh-keygen -t rsa -b 2048 -f ssh.key
 ```
 
 ### Connecting into instance
-After running terraform apply you will see the publi ip
+After running terraform apply you will see the public ip
 ```
 ssh -i ssh.key opc@<instance_ip>
 ```
